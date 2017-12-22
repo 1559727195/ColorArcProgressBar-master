@@ -9,6 +9,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.PointF;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SweepGradient;
 import android.graphics.drawable.Drawable;
@@ -51,6 +52,16 @@ public class ColorArcProgressBar extends View{
     private float currentAngle = 330; //105 - 330
     private float lastAngle;
     private int[] colors = new int[]{Color.GREEN, Color.YELLOW, Color.RED, Color.RED};
+    private int[] colors_array = new int[]{Color.parseColor("#AB033D"),
+            Color.parseColor("#450F6F"),
+            Color.parseColor("#450F6C"),
+            Color.parseColor("#450F6C"),
+            Color.parseColor("#8BCD1E"),
+            Color.parseColor("#E3DF1A"),
+            Color.parseColor("#ED870D"),
+            Color.parseColor("#FE1303"),
+    };//指示器的颜色变化
+
     private float maxValues = 60;
     private float curValues = 100;
     private float bgArcWidth = dipToPx(2);
@@ -235,65 +246,38 @@ public class ColorArcProgressBar extends View{
         minValidateTouchArcRadius = (int) (radius - paddingOuterThumb*1.5f);
         maxValidateTouchArcRadius = (int) (radius + paddingOuterThumb*1.5f);
 
-
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
+        String targetText[] = getContext().getResources().getStringArray(R.array.clock);//12,1,2,3.....11
         //抗锯齿
         canvas.setDrawFilter(mDrawFilter);
         if (isNeedDial) {
             //画刻度线
-            for (int i = 0; i < 40; i++) {
-                if (i > 15 && i < 25) {
-                    canvas.rotate(9, centerX, centerY);
+            for (int i = 0; i < 8; i++) {
+                if (i == 3) {
+                    canvas.rotate(45, centerX, centerY);//刻度 = 200 ，从45度开始。canvas画布选装45度
                     continue;
                 }
-                if (i % 5 == 0) {//0,5,10,15,25,35,
-                    degreePaint.setStrokeWidth(dipToPx(2));
-                    switch (i) {
-                        case 0: //45
-                            degreePaint.setColor(Color.parseColor("#FE1303"));//红
-                            canvas.drawText("150",
-                                    centerX,centerY - diameter / 2 - progressWidth - DEGREE_PROGRESS_DISTANCE + progressWidth/2 ,   vTextPaint_zhi);
-                            break;
-                        case 5://90
-                            degreePaint.setColor(Color.parseColor("#AB033D"));//红褐色
-                            canvas.drawText("200",
-                                    centerX,centerY - diameter / 2 - progressWidth - DEGREE_PROGRESS_DISTANCE + progressWidth/2 ,   vTextPaint_zhi);
-                            break;
-                        case 10://135
-                            degreePaint.setColor(Color.parseColor("#450F6F"));//浅褐色
-                            canvas.drawText("300",
-                                    centerX,centerY - diameter / 2 - progressWidth - DEGREE_PROGRESS_DISTANCE + progressWidth/2 ,   vTextPaint_zhi);
-                            break;
-                        case 15://180
-                            degreePaint.setColor(Color.parseColor("#450F6C"));//深褐色
-                            canvas.drawText("500",
-                                    centerX,centerY - diameter / 2 - progressWidth - DEGREE_PROGRESS_DISTANCE + progressWidth/2 ,   vTextPaint_zhi);
-                            break;
-                        case 25://225
-                            degreePaint.setColor(Color.parseColor("#8BCD1E"));//绿
-                            canvas.drawText("0",
-                                    centerX,centerY - diameter / 2 - progressWidth - DEGREE_PROGRESS_DISTANCE + progressWidth/2 ,   vTextPaint_zhi);
-                            break;
-                        case 30://270
-                            degreePaint.setColor(Color.parseColor("#E3DF1A"));//前黄绿
-                            canvas.drawText("50",
-                                    centerX,centerY - diameter / 2 - progressWidth - DEGREE_PROGRESS_DISTANCE + progressWidth/2 ,   vTextPaint_zhi);
-                            break;
-                        case 35://315
-                            degreePaint.setColor(Color.parseColor("#ED870D"));//黄红
-                            canvas.drawText("100",
-                                    centerX,centerY - diameter / 2 - progressWidth - DEGREE_PROGRESS_DISTANCE + progressWidth/2 ,   vTextPaint_zhi);
-                            break;
-                    }
-                    canvas.drawCircle(centerX,centerY - diameter / 2 - progressWidth / 2 - DEGREE_PROGRESS_DISTANCE +progressWidth/2
-                    ,dipToPx(3),degreePaint);
-                    //float cx, float cy, float radius, @NonNull Paint paint
+                canvas.rotate(45, centerX, centerY);
+                degreePaint.setStrokeWidth(dipToPx(2));
+                degreePaint.setColor(colors_array[i]);
+                canvas.drawCircle(centerX, centerY - diameter / 2 - progressWidth / 2 - DEGREE_PROGRESS_DISTANCE + progressWidth / 2
+                        , dipToPx(3), degreePaint);
+//                canvas.drawText(targetText[i],
+//                        centerX, centerY - diameter / 2 - progressWidth - DEGREE_PROGRESS_DISTANCE + progressWidth / 2,
+//                        vTextPaint_zhi);//colors_array
+            }// diameter为圆的直径
+
+            //竖直数字
+                canvas.save();
+                canvas.translate( getWidth() / 2, getHeight() / 2);
+                for (int i = 0; i < 8; i++) {
+                    drawNum(canvas, (i+1) * 45, targetText[i],  vTextPaint_zhi);//关键点就是字体旋转多少角度就回多少角度
                 }
-                canvas.rotate(9, centerX, centerY);//每隔，
-            }
+                canvas.restore();
+
         }
 
         //整个弧
@@ -330,6 +314,33 @@ public class ColorArcProgressBar extends View{
         invalidate();
 
     }
+    
+
+    /**
+     * 数字
+     *
+     * @param canvas
+     * @param degree
+     * @param text
+     * @param paint
+     */
+    private void drawNum(Canvas canvas, int degree, String text, Paint paint) {
+        Rect textBound = new Rect();
+        paint.getTextBounds(text, 0, text.length(), textBound);
+        canvas.rotate(degree);
+//        canvas.translate(0, borderWidth / 2 + maxScaleLength + textHeight * 3f / 4 - getWidth() / 3);
+        canvas.translate(0, (float) (- getWidth() / 2.1));
+        canvas.rotate(-degree);
+//        canvas.drawText(text,-(textBound.right - textBound.left)/2,
+//                (Math.abs(paint.ascent())-Math.abs(paint.descent()))/2,paint);
+        canvas.drawText(text, textBound.width() / 30,
+                textBound.height() / 2, paint);
+        canvas.rotate(degree);
+//        canvas.translate(0, getWidth() / 3 - (borderWidth / 2 + maxScaleLength + textHeight * 3f / 4));
+        canvas.translate(0, (float) (getWidth() / 2.1));
+        canvas.rotate(-degree);
+    }
+
 
     public static class ChartUtil {
 
